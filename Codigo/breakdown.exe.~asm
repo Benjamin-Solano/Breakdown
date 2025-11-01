@@ -12,6 +12,7 @@ TOTAL_BLOQUES EQU 375    ; 15 * 25
 ; Paleta
 paleta_x DB 37
 paleta_y DB 23
+paleta_x_anterior DB 37
 paleta_ancho DB 7
 
 ; Pelota
@@ -97,9 +98,17 @@ MOV AL, juego_activo
 CMP AL, 0
 JE FIN_JUEGO
 
-; Dibujar escena completa
+; Dibujar escena solo una vez al inicio
+MOV AL, frame_counter
+CMP AL, 0
+JNE SKIP_DIBUJO_INICIAL
+
 CALL DIBUJAR_MARCO
 CALL DIBUJAR_BLOQUES
+
+SKIP_DIBUJO_INICIAL:
+; Siempre dibujar paleta (puede moverse)
+CALL BORRAR_PALETA_ANTERIOR
 CALL DIBUJAR_PALETA
 CALL DIBUJAR_PELOTA
 
@@ -127,6 +136,7 @@ JMP MOSTRAR_MENU
 
 MOVER_IZQ:
 MOV AL, paleta_x
+MOV paleta_x_anterior, AL
 CMP AL, 2
 JLE NO_TECLA
 DEC AL
@@ -135,6 +145,7 @@ JMP NO_TECLA
 
 MOVER_DER:
 MOV AL, paleta_x
+MOV paleta_x_anterior, AL
 MOV BL, paleta_ancho
 ADD AL, BL
 CMP AL, 78
@@ -149,6 +160,9 @@ INC frame_counter
 MOV AL, frame_counter
 AND AL, 01h
 JNZ GAME_LOOP
+
+; Borrar posición anterior de la pelota
+CALL BORRAR_PELOTA
 
 CALL MOVER_PELOTA
 JMP GAME_LOOP
@@ -338,6 +352,7 @@ PUSH CX
 
 ; Reiniciar paleta (centrada)
 MOV paleta_x, 37
+MOV paleta_x_anterior, 37
 MOV paleta_y, 23
 
 ; Reiniciar pelota
@@ -486,7 +501,37 @@ POP AX
 RET
 DIBUJAR_PALETA ENDP
 
+BORRAR_PALETA_ANTERIOR PROC
+PUSH AX
+PUSH CX
+PUSH DX
+
+MOV DH, paleta_y
+MOV DL, paleta_x_anterior
+XOR CH, CH
+MOV CL, paleta_ancho
+
+LOOP_BORRAR_PALETA:
+PUSH CX
+PUSH DX
+CALL MOVER_CURSOR
+MOV AH, 02h
+MOV DL, ' '
+INT 21h
+POP DX
+POP CX
+
+INC DL
+LOOP LOOP_BORRAR_PALETA
+
+POP DX
+POP CX
+POP AX
+RET
+BORRAR_PALETA_ANTERIOR ENDP
+
 DIBUJAR_PELOTA PROC
+PUSH AX
 PUSH DX
 MOV DH, pelota_y
 MOV DL, pelota_x
@@ -496,8 +541,24 @@ MOV AH, 02h
 MOV DL, 'o'
 INT 21h
 POP DX
+POP AX
 RET
 DIBUJAR_PELOTA ENDP
+
+BORRAR_PELOTA PROC
+PUSH AX
+PUSH DX
+MOV DH, pelota_y
+MOV DL, pelota_x
+CALL MOVER_CURSOR
+
+MOV AH, 02h
+MOV DL, ' '
+INT 21h
+POP DX
+POP AX
+RET
+BORRAR_PELOTA ENDP
 
 MOVER_PELOTA PROC
 PUSH AX
@@ -642,6 +703,30 @@ JE FIN_VERIFICAR
 ; Destruir bloque
 MOV bloques[BX], 0
 DEC bloques_restantes
+
+; Borrar el bloque de la pantalla
+PUSH BX
+; Calcular posición en pantalla
+MOV AX, BX
+MOV BL, 25
+DIV BL              ; AL = fila, AH = columna
+
+; DH = fila + 2
+MOV DH, AL
+ADD DH, 2
+
+; DL = columna * 3 + 2
+MOV DL, AH
+MOV AL, 3
+MUL DL
+ADD AL, 2
+MOV DL, AL
+
+CALL MOVER_CURSOR
+MOV AH, 02h
+MOV DL, ' '
+INT 21h
+POP BX
 
 ; Rebotar verticalmente
 MOV AL, pelota_dy
