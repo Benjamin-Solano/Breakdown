@@ -34,7 +34,7 @@ Breakdown/
 <hr>
 
 <h2 align = "center">Descripción del juego</h2>
-
+<img src = "./imgs/BreakdownVideo.gif" width ="1100">
 <p>
 <strong>Breakdown</strong> es un juego de tipo <em>breakout</em>, donde el jugador controla una paleta que rebota una pelota para destruir bloques en pantalla.
 Fue desarrollado con fines educativos para aplicar y reforzar conceptos de programación en ensamblador, tales como:
