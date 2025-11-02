@@ -1,6 +1,6 @@
 
 
-<img href = "../imgs/breakdownBanner.png" width = "200">
+<img src = "./imgs/breakdownBanner.png" width = "1100">
 
 <h1 align = "center">Breakdown</h1>
 
